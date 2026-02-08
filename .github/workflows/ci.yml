@@ -1,0 +1,37 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build Docker Image
+      run: docker build -t devops-practice-app .
+
+    - name: Run container for testing
+      run: |
+        docker run -d -p 3000:3000 --name test-container devops-practice-app
+        sleep 5
+        docker ps
+    
+    - name: Verify application is running
+      run: |
+        curl --fail http://localhost:3000/health || exit 1
